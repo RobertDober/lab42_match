@@ -12,6 +12,37 @@ Beyond Match Data: Modify Your Matches
 
 ... and avoid matching again
 
+## Here is your API
+
+## Context: Wrap a Regex, Get a Match (object)
+
+
+```ruby :include
+    let(:match){ Lab42::Match.new(rgx) }
+    let(:rgx) { %r{(\d+)\.(\d*)} }
+```
+
+### Query it
+
+
+... to get your wrapped `Regex` back
+
+```ruby :example Can access the wrapped Regex
+    expect( match.rgx ).to eq(rgx)
+```
+
+
+... or discover that it is not matched yet
+
+```ruby :example
+    expect( match ).not_to be_matched
+```
+
+
+
+
+
+
 
 ## Author
 
