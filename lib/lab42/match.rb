@@ -4,6 +4,19 @@ module Lab42
     NotMatchedYet       = Class.new RuntimeError
     UnsuccessfulMerge   = Class.new RuntimeError
 
+    Parts = {
+      first: 0,
+      first_capture: 2,
+      first_match: 1,
+      last: -1,
+      last_capture: -3,
+      last_match: -2,
+      post: -1,
+      pre: 0,
+      prefix: 0,
+      suffix: -1
+    }
+
     attr_reader :rgx, :subject
 
 
@@ -34,11 +47,26 @@ module Lab42
       @matched
     end
 
+    def parts
+      _assure_success
+      @parts
+    end
+
     def replace(cpt_index, with=nil, &blk)
       _assure_success
       _assure_unambigous_args(with, blk)
-      _clone_myself do 
-        @parts[cpt_index * 2] = with || blk.(@parts[cpt_index * 2])
+      _replace_part(2 * cpt_index, with, &blk)
+    end
+
+    def replace_part(part_index, with=nil, &blk)
+      _assure_success
+      _assure_unambigous_args(with, blk)
+      case part_index
+      when Symbol
+        idx = Parts.fetch(part_index){ raise IllegalSymbolicPartIndex, "#{part_index} is not one of the predefined symbolic indices, which are #{Parts.keys.map(&:inspect).join(", ")}" }
+        _replace_part(idx, with, &blk)
+      else
+        _replace_part(part_index, with, &blk)
       end
     end
 
@@ -116,6 +144,12 @@ module Lab42
       @match = @rgx.match(with)
       _init_parts if @match
       self
+    end
+
+    def _replace_part(index, with, &blk)
+      _clone_myself do 
+        @parts[index] = (with || blk.(@parts[index])).to_s
+      end
     end
 
     def initialize(rgx, subject=nil)

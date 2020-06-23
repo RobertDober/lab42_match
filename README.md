@@ -41,17 +41,17 @@ Example: ... to get your wrapped `Regex` back
 ... be aware of accessing data that is not there yet!
 
 ```ruby :example not matched yet error
-    expect{ subject[0] }.to raise_error(Match::NotMatchedYet) 
+    expect{ subject[0] }.to raise_error(Match::NotMatchedYet)
 ```
 
 ```ruby :example
-    expect{ subject.capts }.to raise_error(Match::NotMatchedYet) 
+    expect{ subject.capts }.to raise_error(Match::NotMatchedYet)
 ```
 
 Example: And even the wrapped `MatchData` object must not be accessed
 
 ```ruby :example
-    expect{ subject.match }.to  raise_error(Match::NotMatchedYet) 
+    expect{ subject.match }.to  raise_error(Match::NotMatchedYet)
 ```
 
 ### Context Attempt an Unsuccessful Match
@@ -106,7 +106,7 @@ Example: All `MatchData` data is available
     end
     expect( subject.capts ).to eq(match_data.captures)
     expect( subject.subject ).to eq(string)
-    
+
 ```
 
 ### So What?
@@ -120,7 +120,108 @@ Example: Increase Integer Part
 ```ruby :example
     replacement = subject.replace(1, "43")
     expect( replacement.string ).to eq("> 43.43 <")
+    # With a block, demonstrating also that the original object has not been altered
+    expect( replacement.replace(1){ |old| old.to_i.succ}.string ).to  eq("> 44.43 <")
+    expect( subject.replace(1){ |old| old.to_i.succ}.string ).to eq("> 43.43 <")
 ```
+
+### Context All The Parts
+
+To demonstrate that, we need a little more complex string and regex
+
+```ruby :include
+    let(:rgx){ %r{\w+\s+(\d+)\s+(\d+)\s+\w+} }
+    let(:string){ "> Hello 42 43 World <" }
+    let(:matched){ Match.new(rgx, string) }
+```
+
+
+Here is the layout of our string, and where the parts are after a successful match
+
+        |> |Hello |42| |43| World| <|
+         ^  ^      ^  ^ ^  ^      ^
+         |  |      |  | |  |      |
+         |  |      |  | |  |      +---------- part[6] corresponds to MatchData#post_match
+         |  |      |  | |  |                  symbolic: :last, :post or :suffix
+         |  |      |  | |  +----------------- part[5] corresponds to the matched part after the last capture
+         |  |      |  | |                     symbolic: :last_match
+         |  |      |  | +-------------------- part[4] corresponds to the last capture
+         |  |      |  |                       symbolic: :last_capture
+         |  |      |  +---------------------- part[3] corresponds to the matched part between the two captures
+         |  |      |
+         |  |      +------------------------- part[2] corresponds to the first capture
+         |  |                                 symbolic: :first_capture
+         |  +-------------------------------- part[1] corresponds to the matched part before the first capture
+         |                                    symbolic: :first_match
+         +----------------------------------- part[0] corresponds to MatchData#pre_match
+                                              symbolic: :first, :pre or :prefix
+
+Example: Demonstrate parts
+
+```ruby :example
+    expect( matched.parts ).to eq([
+        "> ", "Hello ", "42", " ", "43", " World", " <"
+      ])
+```
+
+It can be seen easily that the indices used for `#replace` and to index the captures, that is 1 based can be
+transformed to point to their corresponding parts by simply doubling them.
+
+For the parts outside the captures convenient shortcuts will be provided, and only for the parts between captures you
+would need to do some calculations to access them.
+
+But then oftentimes you will make a capture group in order to change the matched text.
+
+Let us change some parts now to see what that does
+
+Example: Change parts by numeric index
+
+```ruby :example
+      incremented = matched.replace_part(2, 43).replace_part(-1){|s| s.reverse}
+      expected = [
+        "> ", "Hello ", "43", " ", "43", " World", "< "
+      ]
+      expect( incremented.parts ).to eq(expected)
+      expect( incremented.string ).to eq(expected.join)
+```
+
+The same can be achieved by using symbolic indices which are
+
+        first: 0
+        first_capture: 2
+        first_match: 1
+        last: -1
+        last_capture: -3
+        last_match: -2
+        post: -1
+        pre: 0
+        prefix: 0
+        suffix: -1
+
+Therefore the following will hold
+
+Example: Change parts by symbolic name
+
+```ruby :example
+      modified = matched
+        .replace_part(:first, ">>>")
+        .replace_part(:first_match){ |x| x[2] }
+        .replace_part(:first_capture, "43")
+        .replace_part(:last_capture, "42")
+        .replace_part(:last_match){ |x| x[-1] }
+        .replace_part(:suffix, "<<<")
+      expected_parts = [
+        ">>>", "l", "43", " ", "42", "d", "<<<"
+      ]
+      expect( modified.parts ).to eq(expected_parts)
+    
+```
+
+
+
+From this it follows directly
+
+
 
 
 ## Author
