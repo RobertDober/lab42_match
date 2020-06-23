@@ -127,6 +127,16 @@ module Lab42
     end
 
     def _init_parts
+      return _init_parts_with_captures if @match.size > 1
+      @parts = [
+        @match.pre_match,
+        @match.to_s,
+        @match.post_match
+      ]
+      _refresh
+    end
+
+    def _init_parts_with_captures
       @parts = [@match.pre_match, subject[@match.begin(0)...@match.begin(1)]]
       (1...@match.size.pred).each do |capture_index|
         @parts << @match[capture_index]
