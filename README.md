@@ -109,6 +109,20 @@ Example: All `MatchData` data is available
     
 ```
 
+### So What?
+
+Well the fun starts now, we can change all parts of our matches! Did you just say **all**?
+
+Indeed I did, but let us start with the obvious ones, the captures:
+
+Example: Increase Integer Part
+
+```ruby :example
+    replacement = subject.replace(1, "43")
+    expect( replacement.string ).to eq("> 43.43 <")
+```
+
+
 ## Author
 
 Copyright © 2020 Robert Dober
