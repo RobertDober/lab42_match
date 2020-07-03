@@ -137,13 +137,23 @@ module Lab42
     end
 
     def _init_parts_with_captures
-      @parts = [@match.pre_match, subject[@match.begin(0)...@match.begin(1)]]
-      (1...@match.size.pred).each do |capture_index|
-        @parts << @match[capture_index]
-        @parts << subject[@match.end(capture_index)...@match.begin(capture_index.succ)]
+      captures = @match.captures.map{ |x| x || "" }
+      last_match_idx = 0
+      begin_ends = (1...@match.size)
+        .map do |idx|
+          x = @match.begin(idx) || last_match_idx
+          y = @match.end(idx) || x
+          last_match_idx = y
+          [x, y]
       end
-      @parts << @match[-1]
-      @parts << subject[@match.end(@match.size.pred)...@match.end(0)]
+
+      @parts = [@match.pre_match, subject[@match.begin(0)...begin_ends.first.first]]
+      (1...@match.size.pred).each do |capture_index|
+        @parts << captures[capture_index.pred]
+        @parts << subject[begin_ends[capture_index.pred].last...begin_ends[capture_index].first]
+      end
+      @parts << (@match[-1] || "")
+      @parts << subject[begin_ends.last.last...@match.end(0)]
       @parts << @match.post_match
       _refresh
     end
